@@ -106,6 +106,62 @@ class WidgetRestControllerTest {
                 .andExpect(jsonPath("$.version", is(1)));
     }
 
+    @Test
+    @DisplayName("PUT /rest/widget")
+    void testUpdateWidget() throws Exception {
+        // Setup our mocked service
+        Widget widgetToPost = new Widget("New Widget", "This is my widget");
+        Widget widgetToReturn = new Widget(1L, "New Widget", "This is my widget", 1);
+        doReturn(widgetToReturn).when(service).save(any());
+
+        // Execute the POST request
+        mockMvc.perform(put("/rest/widget", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(widgetToPost)))
+
+                // Validate the response code and content type
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+
+                // Validate headers
+                .andExpect(header().string(HttpHeaders.LOCATION, "/rest/widget/1"))
+                .andExpect(header().string(HttpHeaders.ETAG, "\"1\""))
+
+                // Validate the returned fields
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.name", is("New Widget")))
+                .andExpect(jsonPath("$.description", is("This is my widget")))
+                .andExpect(jsonPath("$.version", is(1)));
+    }
+
+    @Test
+    @DisplayName("GET /widget by id success")
+    void testGetWidgetSuccess() throws Exception {
+        // Setup our mocked service
+        Widget widget1 = new Widget(1l, "Widget Name", "Description", 1);
+        doReturn(Lists.newArrayList(widget1)).when(service).findAll();
+
+        // Execute the GET request
+        mockMvc.perform(get("/rest/widget/{id}", 1L))
+                // Validate the response code and content type
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+
+                // Validate headers
+                .andExpect(header().string(HttpHeaders.LOCATION, "/rest/widget/{id}"))
+
+                // Validate the returned fields
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id", is(1)))
+                .andExpect(jsonPath("$[0].name", is("Widget Name")))
+                .andExpect(jsonPath("$[0].description", is("Description")))
+                .andExpect(jsonPath("$[0].version", is(1)))
+                .andExpect(jsonPath("$[1].id", is(2)))
+                .andExpect(jsonPath("$[1].name", is("Widget 2 Name")))
+                .andExpect(jsonPath("$[1].description", is("Description 2")))
+                .andExpect(jsonPath("$[1].version", is(4)));
+    }
+
 
     static String asJsonString(final Object obj) {
         try {
